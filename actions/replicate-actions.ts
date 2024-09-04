@@ -19,13 +19,17 @@ export async function generateAnalogy(prompt: string): Promise<string> {
     log_performance_metrics: false,
   };
 
+  try {
+    const output = [];
+    for await (const event of replicate.stream("meta/meta-llama-3-8b-instruct", {
+      input,
+    })) {
+      output.push(event);
+    }
 
-  const output = [];
-  for await (const event of replicate.stream("meta/meta-llama-3-8b-instruct", {
-    input,
-  })) {
-    output.push(event);
+    return output.join("");
+  } catch (error) {
+    console.error("Error in generateAnalogy:", error);
+    throw error; // Re-throw the error to be handled by the client
   }
-
-  return output.join("");
 }

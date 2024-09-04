@@ -33,7 +33,7 @@ export default function AnalogiesPage() {
       const result = await generateAnalogy(input);
       setMessages(prev => [...prev, { role: "assistant", content: result }]);
     } catch (err) {
-      console.error(err);
+      console.error("Error in handleSubmit:", err);
       setMessages(prev => [...prev, { role: "assistant", content: "Failed to generate analogy. Please try again." }]);
     } finally {
       setLoading(false);

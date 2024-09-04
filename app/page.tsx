@@ -1,4 +1,43 @@
+"use client";
+
 import Image from "next/image";
+import { ComplexityDropdown } from "./components/ComplexityDropdown";
+import { ChatMessage } from "./components/ChatMessage";
+import { useState } from "react";
+
+function AnalogyPage() {
+  const [complexity, setComplexity] = useState<"Easy" | "Medium" | "Hard">("Easy");
+  const [messages, setMessages] = useState<{ content: string; role: string }[]>([]);
+
+  // ... existing code ...
+
+  const handleComplexityChange = (newComplexity: "Easy" | "Medium" | "Hard") => {
+    setComplexity(newComplexity);
+  };
+
+  const generatePrompt = (input: string) => {
+    let complexityPrompt = "";
+    if (complexity === "Medium") {
+      complexityPrompt = "Provide a moderately complex analogy that goes into more detail.";
+    } else if (complexity === "Hard") {
+      complexityPrompt = "Provide a highly complex and nuanced analogy with advanced concepts.";
+    }
+
+    return `Generate an analogy to explain the following concept: ${input}. ${complexityPrompt}`;
+  };
+
+  return (
+    <div>
+      <ComplexityDropdown onSelect={handleComplexityChange} />
+      {/* ... existing input and chat components ... */}
+      <div className="chat-container">
+        {messages.map((message, index) => (
+          <ChatMessage key={index} content={message.content} isAI={message.role === 'assistant'} />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
   return (
@@ -20,5 +59,4 @@ export default function Home() {
   </main>
   );
 }
-    
 
