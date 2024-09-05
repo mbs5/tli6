@@ -14,8 +14,10 @@ export function ChatMessage({ content, isAI }: ChatMessageProps) {
           <AvatarFallback>AI</AvatarFallback>
         </Avatar>
       )}
-      <div className={`p-3 max-w-[70%] ${isAI ? 'bg-blue-100 rounded-lg rounded-tl-none' : 'bg-gray-100 rounded-lg rounded-tr-none'}`}>
-        {content}
+      <div className={`p-3 max-w-[70%] ${isAI ? 'bg-primary/10 rounded-lg rounded-tl-none' : 'bg-secondary rounded-lg rounded-tr-none'}`}>
+        {content.split('\n\n').map((paragraph, index) => (
+          <p key={index} className={index > 0 ? 'mt-2' : ''}>{paragraph}</p>
+        ))}
       </div>
     </div>
   );
