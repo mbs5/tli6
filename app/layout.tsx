@@ -5,6 +5,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from '@/components/sidebar/sidebar';
 import { ThemeProvider } from "@/providers/theme-provider";
+import { Breadcrumb } from "@/app/components/Breadcrumb"; // Update this import
+import { Toaster } from "@/components/ui/toaster";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -28,10 +30,12 @@ export default function RootLayout({
               onAIToggle={toggleAISidebar}
             />
             <main className="flex-grow overflow-auto ml-16 md:ml-64">
+              <Breadcrumb /> {/* Make sure this is included */}
               {children}
             </main>
           </div>
         </ThemeProvider>
+        <Toaster />
       </body>
     </html>
   );

@@ -2,13 +2,13 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Plus, X, AtSign } from 'lucide-react';
+import { CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
 
 type Complexity = "Easy" | "Medium" | "Hard";
 
@@ -28,7 +28,11 @@ export function EnhancedSidebarInput({ onSubmit, files = [], tool }: EnhancedSid
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [complexity, setComplexity] = useState<Complexity>('Easy');
+  const [searchTerm, setSearchTerm] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [isCommandOpen, setIsCommandOpen] = useState(false);
+  const [commandQuery, setCommandQuery] = useState("");
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -54,58 +58,74 @@ export function EnhancedSidebarInput({ onSubmit, files = [], tool }: EnhancedSid
     );
   };
 
-  const getComplexityOptions = (): Complexity[] => {
-    switch (tool) {
-      case 'analogy':
-      case 'quiz':
-      case 'flashcard':
-        return ['Easy', 'Medium', 'Hard'];
-      default:
-        return [];
+  const filteredFiles = files.filter(file =>
+    file.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newValue = e.target.value;
+    setInput(newValue);
+
+    const lastChar = newValue[newValue.length - 1];
+    if (lastChar === '@') {
+      setIsCommandOpen(true);
+    }
+  };
+
+  const handleFileSelect = (fileId: string) => {
+    const file = files.find(f => f.id === fileId);
+    if (file) {
+      setInput(prev => prev + file.name);
+      setIsCommandOpen(false);
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col h-full">
-      <div className="p-2 border-b">
-        <div className="flex items-center space-x-2">
+      <div className="p-2">
+        <div className="flex items-center">
           <Popover open={isOpen} onOpenChange={setIsOpen}>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="flex-shrink-0 mr-2">
                 <Plus className="h-4 w-4 mr-2" /> Add Content
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[300px] p-0" align="start">
-              <Command>
-                <CommandInput placeholder="Search files..." />
-                <CommandEmpty>No files found.</CommandEmpty>
-                <CommandGroup>
-                  <ScrollArea className="h-[200px]">
-                    {files && files.length > 0 ? (
-                      files.map((file) => (
-                        <CommandItem
-                          key={file.id}
-                          onSelect={() => toggleFile(file.id)}
-                        >
-                          <div className={`flex items-center space-x-2 ${selectedFiles.includes(file.id) ? 'text-primary' : ''}`}>
-                            <span>{file.name}</span>
-                          </div>
-                        </CommandItem>
-                      ))
-                    ) : (
-                      <div className="p-2 text-sm text-muted-foreground">No files available.</div>
-                    )}
-                  </ScrollArea>
-                </CommandGroup>
-              </Command>
+            <PopoverContent className="w-[300px] p-4" align="start">
+              <Input
+                type="text"
+                placeholder="Search files..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="mb-2"
+              />
+              <ScrollArea className="h-[200px]">
+                {filteredFiles.length > 0 ? (
+                  filteredFiles.map((file) => (
+                    <div
+                      key={file.id}
+                      className={`flex items-center space-x-2 p-2 cursor-pointer hover:bg-accent ${
+                        selectedFiles.includes(file.id) ? 'bg-accent' : ''
+                      }`}
+                      onClick={() => toggleFile(file.id)}
+                    >
+                      <span>{file.name}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-2 text-sm text-muted-foreground">No files found.</div>
+                )}
+              </ScrollArea>
             </PopoverContent>
           </Popover>
-          <ScrollArea className="w-[200px] whitespace-nowrap">
-            <div className="flex space-x-1">
+          <div className="flex-grow overflow-hidden">
+            <div
+              ref={scrollContainerRef}
+              className="flex space-x-1 py-1 overflow-x-auto hide-scrollbar"
+            >
               {selectedFiles.map((fileId) => {
                 const file = files.find(f => f.id === fileId);
                 return file ? (
-                  <Badge key={fileId} variant="secondary" className="text-xs">
+                  <Badge key={fileId} variant="secondary" className="text-xs whitespace-nowrap flex-shrink-0">
                     {file.name}
                     <Button
                       variant="ghost"
@@ -119,20 +139,36 @@ export function EnhancedSidebarInput({ onSubmit, files = [], tool }: EnhancedSid
                 ) : null;
               })}
             </div>
-          </ScrollArea>
+          </div>
         </div>
       </div>
+      
       <div className="flex-grow p-2 overflow-hidden">
         <textarea
           ref={textareaRef}
           value={input}
-          onChange={(e) => setInput(e.target.value)}
-          className="w-full min-h-[40px] max-h-[200px] resize-none rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          onChange={handleInputChange}
+          className="w-full min-h-[40px] max-h-[200px] resize-none rounded-md bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
           placeholder="Type your message..."
           rows={1}
         />
       </div>
-      <div className="p-2 border-t flex justify-between items-center">
+      
+      <CommandDialog open={isCommandOpen} onOpenChange={setIsCommandOpen}>
+        <CommandInput placeholder="Search files..." value={commandQuery} onValueChange={setCommandQuery} />
+        <CommandList>
+          <CommandEmpty>No files found.</CommandEmpty>
+          <CommandGroup heading="Files">
+            {files.filter(file => file.name.toLowerCase().includes(commandQuery.toLowerCase())).map(file => (
+              <CommandItem key={file.id} onSelect={() => handleFileSelect(file.id)}>
+                {file.name}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
+      
+      <div className="p-2 flex justify-between items-center">
         <div className="flex items-center space-x-2">
           <Select 
             value={complexity} 
@@ -142,8 +178,8 @@ export function EnhancedSidebarInput({ onSubmit, files = [], tool }: EnhancedSid
               <SelectValue placeholder="Complexity" />
             </SelectTrigger>
             <SelectContent>
-              {getComplexityOptions().map((option) => (
-                <SelectItem key={option} value={option.toLowerCase()}>{option}</SelectItem>
+              {['Easy', 'Medium', 'Hard'].map(option => (
+                <SelectItem key={option} value={option}>{option}</SelectItem>
               ))}
             </SelectContent>
           </Select>

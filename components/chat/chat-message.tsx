@@ -1,51 +1,96 @@
+"use client";
+
 import React, { useState } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { Copy, Plus, Edit, Check, X } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 interface ChatMessageProps {
   content: string;
   isAI: boolean;
+  onEdit?: (newContent: string) => void;
 }
 
-export function ChatMessage({ content, isAI }: ChatMessageProps) {
-  const [isHovered, setIsHovered] = useState(false);
+export function ChatMessage({ content, isAI, onEdit }: ChatMessageProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState(content);
+
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleSave = () => {
+    onEdit?.(editedContent);
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setEditedContent(content);
+    setIsEditing(false);
+  };
+
+  const { toast } = useToast();
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(content);
+    toast({
+      description: "Copied to clipboard",
+      duration: 2000,
+    });
+  };
+
+  const formattedContent = isAI
+    ? content.split('\n\n').map((paragraph, index) => (
+        <p key={index} className={index > 0 ? 'mt-4' : ''}>{paragraph}</p>
+      ))
+    : content;
 
   return (
-    <motion.div
-      className={cn("flex items-start space-x-2 mb-4", isAI ? "justify-start" : "justify-end")}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      {isAI && (
-        <Avatar>
-          <AvatarImage src="/ai-avatar.png" alt="AI" />
-          <AvatarFallback>AI</AvatarFallback>
-        </Avatar>
+    <div className={cn("flex items-start space-x-2 mb-4 group", isAI ? "justify-start" : "justify-end")}>
+      {!isAI && !isEditing && (
+        <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700 opacity-0 group-hover:opacity-100" onClick={handleEdit}>
+          <Edit className="h-4 w-4" />
+        </Button>
       )}
-      <motion.div
+      <div
         className={cn(
-          "px-4 py-2 rounded-lg",
+          "px-4 py-2 rounded-lg relative",
           isAI
-            ? "bg-primary text-primary-foreground rounded-tl-none"
-            : "bg-muted rounded-tr-none"
+            ? "border border-gray-200 dark:border-gray-700"
+            : "bg-primary text-primary-foreground"
         )}
-        whileHover={{ scale: 1.02 }}
       >
-        <p className="text-sm">{content}</p>
-      </motion.div>
-      {isHovered && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-xs text-muted-foreground"
-        >
-          {new Date().toLocaleTimeString()}
-        </motion.div>
-      )}
-    </motion.div>
+        {isEditing ? (
+          <>
+            <textarea
+              value={editedContent}
+              onChange={(e) => setEditedContent(e.target.value)}
+              className="w-full bg-transparent resize-none focus:outline-none"
+            />
+            <div className="mt-2">
+              <Button variant="ghost" size="sm" onClick={handleSave}>
+                <Check className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleCancel}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </>
+        ) : (
+          <div className="text-sm">{formattedContent}</div>
+        )}
+        {isAI && (
+          <div className="absolute bottom-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700" onClick={handleCopy}>
+              <Copy className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
