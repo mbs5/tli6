@@ -11,7 +11,6 @@ export function Breadcrumb() {
 
   return (
     <div className="flex items-center p-4">
-      <Image src="/tli6-logo.png" alt="TLI6 Logo" width={32} height={32} className="mr-4" />
       <ShadcnBreadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
