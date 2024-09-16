@@ -46,9 +46,11 @@ export function Sidebar({ isAIOpen, onAIClose, onAIToggle }: SidebarProps) {
   };
 
   const handleSubmit = async (input: string, selectedFiles: string[], complexity: Complexity) => {
+    console.log("Submitting:", { input, selectedFiles, complexity, tool });
     setMessages(prev => [...prev, { role: 'user', content: input }]);
     try {
       let result: string;
+      console.log("Generating content for tool:", tool);
       switch (tool) {
         case 'analogy':
           result = await generateAnalogy(input, complexity);
@@ -62,6 +64,7 @@ export function Sidebar({ isAIOpen, onAIClose, onAIToggle }: SidebarProps) {
         default:
           throw new Error("Invalid tool selected");
       }
+      console.log("Generated result:", result);
       setMessages(prev => [...prev, { role: 'assistant', content: result }]);
     } catch (error) {
       console.error("Error in handleSubmit:", error);
